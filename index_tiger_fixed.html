@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Охота на умножение</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101c13;font-family:Trebuchet MS,Arial,sans-serif;touch-action:none;user-select:none}
+#game{position:relative;width:100vw;height:100vh;overflow:hidden;background:url("fon.png") center/cover no-repeat}
+#game:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px rgba(0,0,0,.25)}
+.hidden{display:none!important}
+
+/* MENU */
+#menu{position:absolute;inset:0;z-index:30;background:linear-gradient(90deg,rgba(10,25,16,.25),rgba(10,25,16,.05));}
+#hunter{position:absolute;left:3%;bottom:-2%;height:min(88vh,900px);max-width:43vw;object-fit:contain;filter:drop-shadow(0 14px 10px rgba(0,0,0,.35))}
+#menuPanel{position:absolute;right:7%;top:50%;transform:translateY(-50%);width:min(560px,48vw);padding:28px 32px 30px;text-align:center;color:#f9e5a9;background:linear-gradient(#65421f,#3c2613);border:7px solid #8b602b;border-radius:26px;box-shadow:0 16px 40px rgba(0,0,0,.45),inset 0 0 0 3px #c49248}
+#menuPanel h1{font-size:clamp(28px,3.1vw,54px);margin:0 0 8px;text-shadow:0 3px 0 #241408}
+#menuPanel p{font-size:clamp(17px,1.5vw,25px);margin:0 0 20px}
+#tables{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tableBtn{border:3px solid #d5ad62;border-radius:14px;background:#8a5b29;color:white;font-weight:900;font-size:clamp(20px,2vw,32px);padding:12px 4px;cursor:pointer;box-shadow:0 5px 0 #43270f}
+.tableBtn.selected{background:#d99b36;color:#2b1a0c;transform:translateY(2px);box-shadow:0 3px 0 #43270f}
+#startBtn{margin-top:22px;padding:14px 32px;border:0;border-radius:16px;background:#d99b36;color:#28180a;font-weight:900;font-size:clamp(20px,1.8vw,29px);box-shadow:0 6px 0 #714414;cursor:pointer}
+#startBtn:disabled{opacity:.45;cursor:default}
+
+/* GAME HUD */
+#example{position:absolute;z-index:20;left:50%;top:2.5%;transform:translateX(-50%);min-width:270px;text-align:center;padding:10px 28px;color:#fff3c5;background:rgba(52,34,16,.92);border:4px solid #c7974e;border-radius:18px;font-size:clamp(30px,4vw,66px);font-weight:900;text-shadow:0 3px 0 #1d1008;box-shadow:0 7px 16px rgba(0,0,0,.25)}
+#progress{position:absolute;z-index:20;right:2.5%;top:3%;padding:8px 15px;border-radius:13px;background:rgba(27,41,24,.82);color:white;font-size:clamp(15px,1.4vw,23px);font-weight:bold}
+#message{position:absolute;z-index:25;left:50%;top:17%;transform:translateX(-50%);font-size:clamp(25px,3vw,48px);font-weight:900;color:#fff4b8;text-shadow:0 3px 0 #39200c,0 0 12px #000;opacity:0;transition:.2s;pointer-events:none}
+#message.show{opacity:1}
+
+/* TIGERS */
+#field{position:absolute;z-index:8;inset:17% 0 11% 0;overflow:hidden}
+.tigerWrap{position:absolute;width:300px;height:190px;cursor:crosshair;will-change:left}
+.answer{position:absolute;z-index:9;left:50%;top:-34px;transform:translateX(-50%);min-width:70px;padding:4px 12px;text-align:center;border-radius:14px;background:#fff0b6;border:3px solid #65421f;color:#2d1b0c;font-size:30px;font-weight:900;box-shadow:0 4px 8px rgba(0,0,0,.25)}
+.tigerBob{position:absolute;left:0;top:18px;width:300px;height:160px;animation:bodyBob .44s ease-in-out infinite alternate}
+.tiger{position:absolute;inset:0;transform-origin:50% 50%}
+.tiger.reverse{transform:scaleX(-1)}
+.part{position:absolute;pointer-events:none;object-fit:contain}
+.body{z-index:4;width:250px;left:25px;top:12px}
+.tail{z-index:1;width:112px;left:2px;top:59px;transform-origin:88% 50%;animation:tailSwing .72s ease-in-out infinite alternate}
+.leg{width:58px;transform-origin:50% 8%;top:91px}
+.back1{left:61px;z-index:3;animation:legA .52s ease-in-out infinite alternate}
+.back2{left:96px;z-index:2;animation:legB .52s ease-in-out infinite alternate}
+.front1{left:183px;z-index:3;animation:legB .52s ease-in-out infinite alternate}
+.front2{left:211px;z-index:2;animation:legA .52s ease-in-out infinite alternate}
+@keyframes bodyBob{from{transform:translateY(0)}to{transform:translateY(2px)}}
+@keyframes legA{from{transform:rotate(5deg)}to{transform:rotate(-5deg)}}
+@keyframes legB{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+@keyframes tailSwing{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+.tigerWrap.hit .tigerBob{animation:runBob .18s ease-in-out infinite alternate}
+@keyframes runBob{to{transform:translateY(4px)}}
+
+/* GUN */
+#gun{position:absolute;z-index:18;left:50%;bottom:-21%;width:min(29vw,430px);transform-origin:50% 88%;transform:translateX(-50%) rotate(0deg);filter:drop-shadow(0 8px 7px rgba(0,0,0,.35));pointer-events:none;will-change:transform}
+#muzzle{position:absolute;z-index:19;width:34px;height:34px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle,#fff8bd 0 15%,#ffd242 25%,#ff7a00 55%,transparent 70%)}
+#muzzle.flash{animation:flash .12s linear}
+@keyframes flash{50%{opacity:1;transform:scale(2.4)}}
+
+/* END */
+#finish{position:absolute;z-index:40;inset:0;background:rgba(7,17,10,.55);display:flex;align-items:center;justify-content:center}
+#finishBox{background:#4d3219;border:7px solid #b9823d;border-radius:25px;color:#fff0bd;text-align:center;padding:30px 45px;box-shadow:0 16px 40px #0008}
+#finishBox h2{font-size:clamp(32px,4vw,62px);margin:0 0 20px}
+.endBtn{margin:7px;padding:13px 22px;border:0;border-radius:13px;background:#d99b36;font-size:21px;font-weight:900;cursor:pointer}
+
+@media(max-width:700px){
+ #hunter{height:56vh;left:-8%}
+ #menuPanel{right:3%;width:62vw;padding:18px}
+ #tables{grid-template-columns:repeat(2,1fr);gap:7px}
+ #field{inset:20% 0 13%}
+ .tigerWrap{transform:scale(.72)}
+ #gun{width:42vw;bottom:-12%}
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="menu">
+    <img id="hunter" src="oxotnik.png" alt="">
+    <div id="menuPanel">
+      <h1>Охота на умножение</h1>
+      <p>Выбери таблицу умножения</p>
+      <div id="tables"></div>
+      <button id="startBtn" disabled>Начать охоту</button>
+    </div>
+  </div>
+
+  <div id="play" class="hidden">
+    <div id="example"></div>
+    <div id="progress"></div>
+    <div id="message"></div>
+    <div id="field"></div>
+    <img id="gun" src="pistolet.png" alt="">
+    <div id="muzzle"></div>
+  </div>
+
+  <div id="finish" class="hidden">
+    <div id="finishBox">
+      <h2>Все примеры решены!</h2>
+      <button class="endBtn" id="againBtn">Играть ещё</button>
+      <button class="endBtn" id="menuBtn">Другая таблица</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const game=document.getElementById('game');
+const menu=document.getElementById('menu');
+const play=document.getElementById('play');
+const field=document.getElementById('field');
+const exampleEl=document.getElementById('example');
+const progressEl=document.getElementById('progress');
+const messageEl=document.getElementById('message');
+const gun=document.getElementById('gun');
+const muzzle=document.getElementById('muzzle');
+const finish=document.getElementById('finish');
+const startBtn=document.getElementById('startBtn');
+let selected=null, tasks=[], index=0, locked=false, animals=[];
+let aimX=innerWidth/2, aimY=innerHeight/2;
+
+for(let n=2;n<=9;n++){
+ const b=document.createElement('button');
+ b.className='tableBtn'; b.textContent='×'+n;
+ b.onclick=()=>{
+   selected=n;
+   document.querySelectorAll('.tableBtn').forEach(x=>x.classList.remove('selected'));
+   b.classList.add('selected'); startBtn.disabled=false;
+ };
+ document.getElementById('tables').appendChild(b);
+}
+startBtn.onclick=startGame;
+document.getElementById('againBtn').onclick=()=>{finish.classList.add('hidden');startGame()};
+document.getElementById('menuBtn').onclick=()=>{
+ finish.classList.add('hidden'); play.classList.add('hidden'); menu.classList.remove('hidden');
+};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startGame(){
+ menu.classList.add('hidden'); finish.classList.add('hidden'); play.classList.remove('hidden');
+ tasks=shuffle(Array.from({length:9},(_,i)=>({a:selected,b:i+1,answer:selected*(i+1)})));
+ index=0; locked=false; nextRound();
+}
+function wrongAnswers(correct,a,b){
+ const set=new Set([correct]);
+ const candidates=[
+   a*(b+1),a*Math.max(1,b-1),(a+1)*b,Math.max(1,a-1)*b,
+   correct+a,Math.max(1,correct-a),correct+b,Math.max(1,correct-b)
+ ].filter(x=>x>0&&x!==correct);
+ shuffle(candidates).forEach(x=>{if(set.size<3)set.add(x)});
+ while(set.size<3){let x=Math.max(1,correct+(Math.floor(Math.random()*9)-4));if(x!==correct)set.add(x)}
+ return shuffle([...set]);
+}
+function nextRound(){
+ if(index>=tasks.length){finish.classList.remove('hidden');return}
+ locked=false; field.innerHTML=''; animals=[];
+ const t=tasks[index];
+ exampleEl.textContent=`${t.a} × ${t.b} = ?`;
+ progressEl.textContent=`${index+1} / ${tasks.length}`;
+ const answers=wrongAnswers(t.answer,t.a,t.b);
+ const lanes=[12,40,68];
+ answers.forEach((ans,i)=>spawnTiger(ans,ans===t.answer,lanes[i],i));
+}
+function spawnTiger(answer,correct,lane,i){
+ const wrap=document.createElement('div');
+ wrap.className='tigerWrap';
+ wrap.dataset.correct=correct?'1':'0';
+ wrap.style.top=`${lane}%`;
+ const fromLeft=i%2===0;
+ let x=fromLeft ? -330-i*80 : field.clientWidth+80+i*60;
+ const dir=fromLeft?1:-1;
+ wrap.innerHTML=`
+   <div class="answer">${answer}</div>
+   <div class="tigerBob">
+    <div class="tiger${dir<0?' reverse':''}">
+     <img class="part tail" src="tiger_tail.png">
+     <img class="part leg back2" src="tiger_back_leg_2.png">
+     <img class="part leg front2" src="tiger_front_leg_2.png">
+     <img class="part body" src="tiger_body.png">
+     <img class="part leg back1" src="tiger_back_leg_1.png">
+     <img class="part leg front1" src="tiger_front_leg_1.png">
+    </div>
+   </div>`;
+ field.appendChild(wrap);
+ const obj={el:wrap,x,dir,speed:0.42+Math.random()*.16,paused:false};
+ animals.push(obj);
+ wrap.addEventListener('pointerdown',e=>{e.preventDefault();shootTiger(obj,e.clientX,e.clientY)});
+ obj.step=()=>{
+   if(!obj.paused && document.body.contains(wrap)){
+     obj.x+=obj.speed*obj.dir;
+     if(obj.dir>0 && obj.x>field.clientWidth+50)obj.x=-330;
+     if(obj.dir<0 && obj.x<-330)obj.x=field.clientWidth+50;
+     wrap.style.left=obj.x+'px';
+     requestAnimationFrame(obj.step);
+   }
+ };
+ requestAnimationFrame(obj.step);
+}
+function shootTiger(obj,x,y){
+ if(locked)return;
+ flash(x,y);
+ if(obj.el.dataset.correct==='1'){
+   locked=true;
+   showMessage('Верно!');
+   obj.el.classList.add('hit');
+   obj.speed=5.8;
+   setTimeout(()=>{index++;nextRound()},650);
+ }else{
+   showMessage('Попробуй ещё');
+   obj.el.animate([{transform:'translateX(0)'},{transform:'translateX(-12px)'},{transform:'translateX(12px)'},{transform:'translateX(0)'}],{duration:260});
+ }
+}
+function showMessage(t){
+ messageEl.textContent=t; messageEl.classList.add('show');
+ clearTimeout(showMessage.timer); showMessage.timer=setTimeout(()=>messageEl.classList.remove('show'),650);
+}
+function flash(x,y){
+ muzzle.style.left=(x-17)+'px';muzzle.style.top=(y-17)+'px';
+ muzzle.classList.remove('flash');void muzzle.offsetWidth;muzzle.classList.add('flash');
+}
+function aim(clientX,clientY){
+ aimX=clientX;aimY=clientY;
+ const r=gun.getBoundingClientRect();
+ const px=r.left+r.width/2, py=r.top+r.height*.88;
+ let deg=Math.atan2(clientY-py,clientX-px)*180/Math.PI+90;
+ deg=Math.max(-58,Math.min(58,deg));
+ gun.style.transform=`translateX(-50%) rotate(${deg}deg)`;
+}
+game.addEventListener('pointermove',e=>aim(e.clientX,e.clientY),{passive:true});
+game.addEventListener('pointerdown',e=>{if(!play.classList.contains('hidden'))aim(e.clientX,e.clientY)},{passive:true});
+</script>
+</body>
+</html>
