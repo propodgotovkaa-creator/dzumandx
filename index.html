@@ -33,14 +33,16 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101c13;fon
 #field{position:absolute;z-index:8;inset:17% 0 11% 0;overflow:hidden}
 .tigerWrap{position:absolute;width:300px;height:190px;cursor:crosshair;will-change:left}
 .answer{position:absolute;z-index:9;left:50%;top:-34px;transform:translateX(-50%);min-width:70px;padding:4px 12px;text-align:center;border-radius:14px;background:#fff0b6;border:3px solid #65421f;color:#2d1b0c;font-size:30px;font-weight:900;box-shadow:0 4px 8px rgba(0,0,0,.25)}
-.tigerBob{position:absolute;left:0;top:22px;width:300px;height:150px;animation:tigerWalk .34s ease-in-out infinite alternate}
-.tigerWhole{display:block;width:300px;height:150px;object-fit:contain;filter:drop-shadow(0 7px 4px rgba(0,0,0,.18))}
-.tigerBob.reverse .tigerWhole{transform:scaleX(-1)}
-@keyframes tigerWalk{
- from{transform:translateY(0) rotate(-.7deg)}
- to{transform:translateY(4px) rotate(.7deg)}
+.animalBob{position:absolute;left:0;bottom:0;width:300px;height:168px;display:flex;align-items:flex-end;justify-content:center;animation:animalWalk .29s ease-in-out infinite alternate}
+.animalWhole{display:block;max-width:300px;max-height:168px;object-fit:contain;transform-origin:center bottom;filter:drop-shadow(0 6px 3px rgba(0,0,0,.16))}
+.animalBob.reverse .animalWhole{transform:scaleX(-1)}
+.animalBob.elephant{animation-duration:.36s}
+.animalBob.rhino{animation-duration:.31s}
+@keyframes animalWalk{
+ from{transform:translateY(0) rotate(-.45deg)}
+ to{transform:translateY(3px) rotate(.45deg)}
 }
-.tigerWrap.hit .tigerBob{animation-duration:.16s}
+.tigerWrap.hit .animalBob{animation-duration:.14s}
 /* GUN */
 #gun{position:absolute;z-index:18;left:50%;bottom:-21%;width:min(29vw,430px);transform-origin:50% 88%;transform:translateX(-50%) rotate(0deg);filter:drop-shadow(0 8px 7px rgba(0,0,0,.35));pointer-events:none;will-change:transform}
 #muzzle{position:absolute;z-index:19;width:34px;height:34px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle,#fff8bd 0 15%,#ffd242 25%,#ff7a00 55%,transparent 70%)}
@@ -147,10 +149,15 @@ function nextRound(){
  exampleEl.textContent=`${t.a} × ${t.b} = ?`;
  progressEl.textContent=`${index+1} / ${tasks.length}`;
  const answers=wrongAnswers(t.answer,t.a,t.b);
- const lanes=[12,40,68];
- answers.forEach((ans,i)=>spawnTiger(ans,ans===t.answer,lanes[i],i));
+ const lanes=[27,50,70];
+ const species=shuffle([
+   {type:'tiger',src:'tiger.png'},
+   {type:'elephant',src:'slon.png'},
+   {type:'rhino',src:'nosorog.png'}
+ ]);
+ answers.forEach((ans,i)=>spawnTiger(ans,ans===t.answer,lanes[i],i,species[i]));
 }
-function spawnTiger(answer,correct,lane,i){
+function spawnTiger(answer,correct,lane,i,species){
  const wrap=document.createElement('div');
  wrap.className='tigerWrap';
  wrap.dataset.correct=correct?'1':'0';
@@ -160,11 +167,12 @@ function spawnTiger(answer,correct,lane,i){
  const dir=fromLeft?1:-1;
  wrap.innerHTML=`
    <div class="answer">${answer}</div>
-   <div class="tigerBob${dir<0?' reverse':''}">
-     <img class="tigerWhole" src="tiger.png" alt="">
+   <div class="animalBob ${species.type}${dir<0?' reverse':''}">
+     <img class="animalWhole" src="${species.src}" alt="">
    </div>`;
  field.appendChild(wrap);
- const obj={el:wrap,x,dir,speed:0.42+Math.random()*.16,paused:false};
+ const speedBase=species.type==='elephant'?0.72:(species.type==='rhino'?0.90:0.82);
+ const obj={el:wrap,x,dir,speed:speedBase+Math.random()*.18,paused:false};
  animals.push(obj);
  wrap.addEventListener('pointerdown',e=>{e.preventDefault();shootTiger(obj,e.clientX,e.clientY)});
  obj.step=()=>{
