@@ -31,24 +31,16 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101c13;fon
 
 /* TIGERS */
 #field{position:absolute;z-index:8;inset:17% 0 11% 0;overflow:hidden}
-.tigerWrap{position:absolute;width:300px;height:190px;will-change:transform;cursor:crosshair}
+.tigerWrap{position:absolute;width:300px;height:190px;cursor:crosshair;will-change:left}
 .answer{position:absolute;z-index:9;left:50%;top:-34px;transform:translateX(-50%);min-width:70px;padding:4px 12px;text-align:center;border-radius:14px;background:#fff0b6;border:3px solid #65421f;color:#2d1b0c;font-size:30px;font-weight:900;box-shadow:0 4px 8px rgba(0,0,0,.25)}
-.tiger{position:absolute;left:0;top:18px;width:300px;height:160px;transform-origin:center;animation:bodyBob .42s ease-in-out infinite alternate}
-.part{position:absolute;pointer-events:none;object-fit:contain}
-.body{z-index:4;width:250px;left:25px;top:12px}
-.tail{z-index:1;width:112px;left:0;top:61px;transform-origin:90% 50%;animation:tailSwing .65s ease-in-out infinite alternate}
-.leg{z-index:3;width:66px;transform-origin:50% 12%;top:91px}
-.back1{left:58px;animation:legA .48s ease-in-out infinite alternate}
-.back2{left:100px;z-index:2;animation:legB .48s ease-in-out infinite alternate}
-.front1{left:191px;animation:legB .48s ease-in-out infinite alternate}
-.front2{left:223px;z-index:2;animation:legA .48s ease-in-out infinite alternate}
-@keyframes bodyBob{to{transform:translateY(4px) rotate(.5deg)}}
-@keyframes legA{from{transform:rotate(16deg)}to{transform:rotate(-16deg)}}
-@keyframes legB{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
-@keyframes tailSwing{from{transform:rotate(-8deg)}to{transform:rotate(9deg)}}
-.tigerWrap.hit{animation:dash .55s ease-in forwards}
-@keyframes dash{to{transform:translateX(45vw) scale(.75);opacity:0}}
-
+.tigerBob{position:absolute;left:0;top:22px;width:300px;height:150px;animation:tigerWalk .34s ease-in-out infinite alternate}
+.tigerWhole{display:block;width:300px;height:150px;object-fit:contain;filter:drop-shadow(0 7px 4px rgba(0,0,0,.18))}
+.tigerBob.reverse .tigerWhole{transform:scaleX(-1)}
+@keyframes tigerWalk{
+ from{transform:translateY(0) rotate(-.7deg)}
+ to{transform:translateY(4px) rotate(.7deg)}
+}
+.tigerWrap.hit .tigerBob{animation-duration:.16s}
 /* GUN */
 #gun{position:absolute;z-index:18;left:50%;bottom:-21%;width:min(29vw,430px);transform-origin:50% 88%;transform:translateX(-50%) rotate(0deg);filter:drop-shadow(0 8px 7px rgba(0,0,0,.35));pointer-events:none;will-change:transform}
 #muzzle{position:absolute;z-index:19;width:34px;height:34px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle,#fff8bd 0 15%,#ffd242 25%,#ff7a00 55%,transparent 70%)}
@@ -168,16 +160,10 @@ function spawnTiger(answer,correct,lane,i){
  const dir=fromLeft?1:-1;
  wrap.innerHTML=`
    <div class="answer">${answer}</div>
-   <div class="tiger">
-    <img class="part tail" src="tiger_tail.png">
-    <img class="part leg back2" src="tiger_back_leg_2.png">
-    <img class="part leg front2" src="tiger_front_leg_2.png">
-    <img class="part body" src="tiger_body.png">
-    <img class="part leg back1" src="tiger_back_leg_1.png">
-    <img class="part leg front1" src="tiger_front_leg_1.png">
+   <div class="tigerBob${dir<0?' reverse':''}">
+     <img class="tigerWhole" src="tiger.png" alt="">
    </div>`;
  field.appendChild(wrap);
- if(dir<0) wrap.querySelector('.tiger').style.transform='scaleX(-1)';
  const obj={el:wrap,x,dir,speed:0.42+Math.random()*.16,paused:false};
  animals.push(obj);
  wrap.addEventListener('pointerdown',e=>{e.preventDefault();shootTiger(obj,e.clientX,e.clientY)});
@@ -196,9 +182,9 @@ function shootTiger(obj,x,y){
  if(locked)return;
  flash(x,y);
  if(obj.el.dataset.correct==='1'){
-   locked=true; obj.paused=true;
-   showMessage('Верно!');
+   locked=true; showMessage('Верно!');
    obj.el.classList.add('hit');
+   obj.speed=5.8;
    setTimeout(()=>{index++;nextRound()},650);
  }else{
    showMessage('Попробуй ещё');
